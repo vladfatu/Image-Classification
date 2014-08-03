@@ -14,7 +14,29 @@ public class Test
     {
     	try
 		{
-			convertToGrayAndPng();
+    		double minDistance = Double.MAX_VALUE;
+    		int closestImage = 0;
+	        int[] lbpVector1 = convertToGrayAndPng("test/icon_d09.jpg");
+	        printVector(lbpVector1);
+	        for (int i=1;i<=25;i++)
+	        {
+	        	System.out.println("Sample: " + i);
+	        	System.out.println();
+		        int[] lbpVector2 = convertToGrayAndPng("sample/icon_s" + i + ".jpg");
+		        printVector(lbpVector2);
+		        
+		        double euclideanDistance = euclideanDistance(lbpVector1, lbpVector2);
+		        if (euclideanDistance < minDistance)
+		        {
+		        	minDistance = euclideanDistance;
+		        	closestImage = i;
+		        }
+				System.out.println(euclideanDistance);
+		        System.out.println();
+	        }
+	        
+	        System.out.println("Winner is: " + closestImage + " with a distance of: " + minDistance);
+	        
 		} catch (IOException e)
 		{
 			// TODO Auto-generated catch block
@@ -22,9 +44,9 @@ public class Test
 		}
     }
     
-    public static void convertToGrayAndPng() throws IOException {
+    public static int[] convertToGrayAndPng(String path) throws IOException {
     	 
-        BufferedImage sourceImg = ImageIO.read(new File("source4.jpg") );
+        BufferedImage sourceImg = ImageIO.read(new File(path) );
      
         // We'll be doing some gray scale magic here soon...
 //        BufferedImageOp op = new ColorConvertOp(ColorSpace.getInstance(ColorSpace.CS_GRAY), null); 
@@ -48,10 +70,8 @@ public class Test
      
         ImageIO.write( image, "png", new File("output.png") );
         
-//        compress(image);
-        int a[] = new int[] {1, 0};
-        int b[] = new int[] {0, 1};
-        System.out.println(euclideanDistance(a, b));
+        int[][] pixels = compress(image);
+        return generateLBPVector(pixels);
      
     }
     
@@ -75,15 +95,55 @@ public class Test
             {
                 pixel = image_raster.getPixel(i, j, buffer);
                 original[i][j] = pixel[0];
-                System.out.println(pixel[0]);
             }
         System.out.println("width: " + image_raster.getWidth() + ", Height: " +  image_raster.getHeight());
         return original;                   
     }      
     
-    public static int[][] generateLBPMatrix(int[][] pixels)
+    public static int[] generateLBPVector(int[][] pixels)
     {
-    	return pixels;
+    	int[] vector = new int[256];
+    	for (int i=1;i<pixels.length-1;i++)
+    	{
+    		for (int j=1;j<pixels[i].length-1;j++)
+    		{
+    			int number = 0;
+    			if (pixels[i][j] > pixels[i-1][j-1])
+    			{
+    				number += Math.pow(2, 7);
+    			}
+    			if (pixels[i][j] > pixels[i-1][j])
+    			{
+    				number += Math.pow(2, 6);
+    			}
+    			if (pixels[i][j] > pixels[i-1][j+1])
+    			{
+    				number += Math.pow(2, 5);
+    			}
+    			if (pixels[i][j] > pixels[i][j+1])
+    			{
+    				number += Math.pow(2, 4);
+    			}
+    			if (pixels[i][j] > pixels[i+1][j+1])
+    			{
+    				number += Math.pow(2, 3);
+    			}
+    			if (pixels[i][j] > pixels[i+1][j])
+    			{
+    				number += Math.pow(2, 2);
+    			}
+    			if (pixels[i][j] > pixels[i+1][j-1])
+    			{
+    				number += 2;
+    			}
+    			if (pixels[i][j] > pixels[i][j-1])
+    			{
+    				number += 1;
+    			}
+    			vector[number]++;
+    		}
+    	}
+    	return vector;
     }
     
     public static double euclideanDistance(int[] a, int[] b)
@@ -91,8 +151,32 @@ public class Test
     	int sum = 0;
     	for (int i=0;i<a.length;i++)
     	{
-    		sum += ((a[i] - b[i]) * (a[i] - b[i]));
+    		if (a[i] > 0 || b[i] > 0)
+    		{
+    			sum += ((a[i] - b[i]) * (a[i] - b[i]));
+    		}
     	}
     	return Math.sqrt(sum);
     }
+    
+    public static void printMatrix(int[][] matrix)
+	{
+		for (int i = 0; i < matrix.length; i++)
+		{
+			for (int j = 0; j < matrix[i].length; j++)
+			{
+				System.out.print(matrix[i][j] + " ");
+			}
+			System.out.println();
+		}
+	}
+    
+    public static void printVector(int[] vector)
+	{
+		for (int i = 0; i < vector.length; i++)
+		{
+			System.out.print(vector[i] + ", ");
+		}
+		System.out.println();
+	}
 }
